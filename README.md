@@ -74,3 +74,7 @@ npm test        # vitest, 175 tests
 ## Configuration
 
 Hoja filing resolves a project in this order: this chat's `hoja_project` selection, then `.pi/config/hoja.json` in the repository (`{"project":"<exact name>"}`).
+
+## License
+
+MIT — see [LICENSE](LICENSE). The extracted code originates from `cloverinternational/trebol`, which ships no license; this repository is released under MIT by its owner.

@@ -1,0 +1,25 @@
+{
+  "name": "hoja-manage-pi",
+  "version": "0.1.0",
+  "private": true,
+  "type": "module",
+  "pi": {
+    "extensions": [
+      "src/extension/index.ts"
+    ]
+  },
+  "scripts": {
+    "build": "tsc -p tsconfig.json",
+    "test": "vitest run"
+  },
+  "peerDependencies": {
+    "@earendil-works/pi-tui": "^1.0.4"
+  },
+  "devDependencies": {
+    "@earendil-works/pi-tui": "^1.0.4",
+    "@types/node": "^26.6.6",
+    "typescript": "^5.6.0",
+    "vitest": "^2.1.0",
+    "yaml": "^2.9.1"
+  }
+}

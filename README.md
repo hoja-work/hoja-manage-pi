@@ -18,7 +18,8 @@ Extracted from `cloverinternational/trebol` at commit `e09781a` with `git filter
 | `packages/runtime/core` | `packages/runtime/core` |
 | `extensions/taskmanage` | `extensions/taskmanage` (Pi wrapper) |
 | `extensions/task-browser` | `extensions/task-browser` |
-| `extensions/hoja-mode` | `extensions/hoja-mode` (Hoja filing) |
+| `extensions/hoja-mode` | `extensions/hoja-mode` (Hoja filing; synced to `4f7490e`) |
+| `.pi/test/tools/hoja-*.test.ts` | `.pi/test/tools/hoja-*.test.ts` (6 suites) |
 | `.pi/lib/**` | runtime, policy, ui, tools and claw helpers the above import |
 | `src/extension/index.ts` | **new** — single entry composing the three extensions |
 

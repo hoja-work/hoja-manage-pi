@@ -5,6 +5,7 @@ Hoja-backed task management for [Pi](https://github.com/hoja-work). One Pi exten
 - **TaskManage** — the task engine (create/update/get/list, acceptance questions with evidence revalidation, hooks that gate tool use on a focused task).
 - **Task browser** — read-only TUI overlay opened with `/tasks`.
 - **Hoja filing** — coarse tasks publish automatically to a [Hoja](https://hoja.app) issue; steps stay local. Read-only `hoja_list` / `hoja_get` answer "what should I do next".
+- **Program status** — reports idle/working/blocked/done/error over OSC 7501 so a Hoja runner can drive a plain `pi -ne -e src/extension/index.ts`. Set `PI_PROGRAM_STATUS=1` to force it on (`0` off); it stays silent when the host Pi already reports natively or Trebol is loaded.
 - **Hoja decisions** — `hoja_decision_ask` asks a person a decision on a Hoja task and continues this same Pi session with the answer, exactly once (see below).
 
 ## Provenance
@@ -24,6 +25,8 @@ Extracted from `cloverinternational/trebol` at commit `e09781a` with `git filter
 | `.pi/lib/**` | runtime, policy, ui, tools and claw helpers the above import |
 | `src/extension/index.ts` | **new** — single entry composing the extensions |
 | `extensions/hoja-decision` | **new here** (HOJA-799-A-8), not in Trebol; Trebol syncs never touch it |
+| `extensions/program-status` | adapted from `extensions/swarm-program-status` at `bb517af` (HOJA-802); not a verbatim sync |
+| `.pi/lib/runtime/program-status.ts` | `.pi/lib/runtime/program-status.ts` at `bb517af` (unchanged) |
 
 Files keep their upstream paths (rather than being relocated under `src/`) so that `git log` on any file is the real history and upstream diffs apply cleanly.
 

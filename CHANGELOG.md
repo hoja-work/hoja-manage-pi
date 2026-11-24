@@ -1,5 +1,15 @@
 # Changelog
 
+## 0.4.0
+
+HOJA-802: Pi reports its run state over OSC 7501 (Program Status Protocol rev 0.4) with only this extension loaded, so a Hoja runner can drive `pi -ne -e src/extension/index.ts`.
+
+- `extensions/program-status` (new, wired in `src/extension/index.ts`): ported from Trebol's `extensions/swarm-program-status` (`bb517af`). `session_start` → `idle`, `before_agent_start`/`turn_start` → `working`, `ask_user_question` and extension UI prompts → `blocked` (`kind=question`, `permission` for confirms), `agent_settled` → `done` or `error`, `session_shutdown` → `clear`. Unlike Trebol, `done` waits for `agent_settled`, because hoja-decision can still continue the run from `agent_before_settle`. Sequences carry `app=pi` and go to stderr.
+- Gate: `PI_PROGRAM_STATUS=1|0` (what the runner sets), then Trebol's `TREBOL_PROGRAM_STATUS=1|0`, then Trebol's default (stderr is a TTY and `TERM` is not `dumb`).
+- One reporter at a time: silent when the host Pi reports natively (TUI mode and the host's pi-tui `ProcessTerminal` has `setProgramStatus`, as in pi 1.1.0 / pi-tui 1.5), silent while Trebol is loaded and on (its own extension reports), and registered once per Pi instance across module copies.
+- `.pi/lib/runtime/program-status.ts` and `.pi/test/runtime/program-status.test.ts`: Trebol's OSC 7501 emitter and its suite at `bb517af`, unchanged.
+- `.pi/test/ui/program-status.test.ts`: lifecycle, continuation, blocked/resume, error, gate, dedupe and native-deferral cases, asserted through a port of the runner's `Osc7501Parser`.
+
 ## 0.3.0
 
 HOJA-799-A-8: Pi waits for a decision answer and continues the same session.

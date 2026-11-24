@@ -7,6 +7,7 @@ Hoja-backed task management for [Pi](https://github.com/hoja-work). One Pi exten
 - **Hoja filing** — coarse tasks publish automatically to a [Hoja](https://hoja.app) issue; steps stay local. Read-only `hoja_list` / `hoja_get` answer "what should I do next".
 - **Program status** — reports idle/working/blocked/done/error over OSC 7501 so a Hoja runner can drive a plain `pi -ne -e src/extension/index.ts`. Set `PI_PROGRAM_STATUS=1` to force it on (`0` off); it stays silent when the host Pi already reports natively or Trebol is loaded.
 - **Hoja decisions** — `hoja_decision_ask` asks a person a decision on a Hoja task and continues this same Pi session with the answer, exactly once (see below).
+- **Hoja artifacts** — `hoja_artifact_upload {paths, issue?, titles?, ttlDays?}` uploads local files (screenshots, recordings, PDFs, rendered options) to Hoja and returns shareable `url`/`absoluteUrl`/`markdown`, so nothing in Hoja points at a path on this box. SVG/HTML are refused by Hoja: render them to PNG first.
 
 ## Provenance
 
@@ -78,6 +79,11 @@ npm test        # vitest
 `packages/tools/mcp/test/index.test.ts > turns a closed server pipe into a transport failure` times out under full-suite parallelism and passes in isolation. Trebol's own full suite fails on the same test (verified on `e09781a`), so this is upstream behavior, not a port regression.
 
 ## Hoja decisions (wait for an answer)
+
+Up to 20 options. Before creating, existing local image/video/PDF files named in the question, context or options
+are uploaded (attached to the task) and the path is replaced by the Hoja URL. A call that still names a local
+`.svg`/`.html` file, a `file://` or `localhost` URL, or an absolute `/root`, `/tmp`, `/home` artifact path is refused
+with the fix: render to PNG, `hoja_artifact_upload`, pass each URL as an option's `mediaUrl`.
 
 `hoja_decision_ask {task, question, options?[{key,label,description,mediaUrl}], context?, wait_seconds?}` creates a
 decision with `taskDecisionCreate` and a `binding` built from the live session, never from the model's arguments:

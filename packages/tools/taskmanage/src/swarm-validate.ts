@@ -10,6 +10,10 @@
  */
 const MAX_OPERATIONS = 50, DEFAULT_LIST_LIMIT = 50, MAX_LIST_LIMIT = 500;
 const MINIMAL_CREATE = `{"key":"<your-key>","op":"create","subject":"<short imperative title>"}`;
+/** HOJA-822: the whole call, for a model that guessed the wrong top-level shape. Weak models
+ * invented `tasks: [...]` and `questions` at the top level and never found `operations`
+ * from a bare "unknown field" error, so every shape error names the one shape that works. */
+export const TASKMANAGE_CALL_SHAPE = `TaskManage takes {"operations":[...]}: a list of operations, each with its own "key" and "op". Example: {"operations":[{"key":"t1","op":"create","subject":"<short imperative title>","status":"in_progress","active":true}]}`;
 const CATEGORIES = new Set(["researching", "planning", "acting", "verifying", "debugging", "documenting"]);
 const PRIORITIES = new Set(["low", "medium", "high"]);
 const NOTE_TYPES = new Set(["decision", "blocker", "learning", "milestone", "question", "observation", "other"]);
@@ -206,10 +210,10 @@ export function swarmValidateTaskManageParams(params: unknown): string | undefin
     const normalized = normalizeTaskManageParams(params);
     const raw = isObj(normalized) ? normalized : {};
     // The call label belongs to presentation; operation descriptions remain task data.
-    for (const field of Object.keys(raw)) if (field !== "operations" && field !== "mode" && field !== "description") fail(`unknown top-level field ${q(field)}`);
+    for (const field of Object.keys(raw)) if (field !== "operations" && field !== "mode" && field !== "description") fail(`unknown top-level field ${q(field)}. ${TASKMANAGE_CALL_SHAPE}`);
     if (raw.description !== undefined && typeof raw.description !== "string") fail("description must be a string");
     const ops = raw.operations;
-    if (ops === undefined) fail("operations is required");
+    if (ops === undefined) fail(`operations is required. ${TASKMANAGE_CALL_SHAPE}`);
     if (!Array.isArray(ops)) fail("operations must be an array");
     if ((ops as unknown[]).length === 0) fail("operations must contain at least one operation");
     if ((ops as unknown[]).length > MAX_OPERATIONS) fail(`operations exceeds maximum of ${MAX_OPERATIONS}`);

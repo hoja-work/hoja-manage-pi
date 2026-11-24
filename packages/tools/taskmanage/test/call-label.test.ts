@@ -38,10 +38,17 @@ describe('TaskManage call label', () => {
 
   it('still rejects a genuinely unknown top-level field by name', () => {
     const tasks = manager();
-    expect(swarmValidateTaskManageParams({ label: 'Label', operations: [create] })).toBe('unknown top-level field "label"');
+    expect(swarmValidateTaskManageParams({ label: 'Label', operations: [create] })).toMatch(/^unknown top-level field "label"\. TaskManage takes \{"operations":/);
     const batch = tasks.execute({ bogus: 1, operations: [create] } as never);
     expect(batch.status).toBe('failed');
-    expect(batch.results[0].error?.message).toBe('unknown top-level field "bogus"');
+    expect(batch.results[0].error?.message).toMatch(/^unknown top-level field "bogus"\. TaskManage takes \{"operations":/);
+  });
+
+  it('names the shape that works when a model guesses tasks or questions at the top level (HOJA-822)', () => {
+    const tasks = swarmValidateTaskManageParams({ tasks: [{ id: 'x', title: 'y' }] }) ?? '';
+    expect(tasks).toContain('unknown top-level field "tasks"');
+    expect(tasks).toContain('{"operations":[{"key":"t1","op":"create"');
+    expect(swarmValidateTaskManageParams({})).toContain('operations is required. TaskManage takes {"operations":');
   });
 
   it('rejects a non-string label at both layers', () => {

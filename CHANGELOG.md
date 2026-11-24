@@ -1,5 +1,13 @@
 # Changelog
 
+## 0.4.2
+
+- TaskManage shape errors name the call that works (HOJA-822). An unknown top-level field (a
+  model guessing `tasks: [...]` or `questions` at the top level) and a missing `operations` now
+  answer with `{"operations":[{"key":"t1","op":"create","subject":...}]}`; the task gate's block
+  message shows the same call. A delegated run on DeepSeek had retried `tasks` 60 times against a
+  bare "unknown top-level field" error and never reached its work.
+
 ## 0.4.1
 
 HOJA-817: the skill budget gate no longer blocks every tool when this extension runs on its own. It refills only through `Skill`, which the autogenskills manager registers, and `src/extension/index.ts` does not load that manager, so a Hoja runner's pi (`-e src/extension/index.ts` in its own profile) was blocked after five calls with no way out. The gate now applies only while that manager is loaded (`skillBudgetActive` on `createSwarmBuiltinPipeline`; the runtime passes "the autogenskills budget source exists"). Inside Trebol nothing changes. Test: `.pi/test/runtime/skill-budget-gate.test.ts`.

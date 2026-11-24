@@ -193,6 +193,9 @@ This is a HARD REQUIREMENT. RECOMMENDED WORKFLOW:
   4. Execute your tools
   5. TaskManage update operation with status="completed"
 
+The exact call that unlocks your tools (HOJA-822):
+  TaskManage {"operations":[{"key":"t1","op":"create","subject":"<what you are about to do>","status":"in_progress","active":true}]}
+
 Categories: researching | planning | acting | verifying | debugging | documenting`;
   }
 }

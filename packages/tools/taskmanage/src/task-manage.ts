@@ -80,7 +80,7 @@ export interface OperationEvent {
   data: { mode: Mode; status: Batch["status"]; results: Result[]; at: string };
 }
 import { replayLatest, snapshot, type VersionedSnapshot } from "./persistence.js";
-import { ALLOWED, goNow, normalizeTaskManageParams, swarmValidateTaskManageParams } from "./swarm-validate.js";
+import { ALLOWED, goNow, normalizeTaskManageParams, swarmValidateTaskManageParams, TASKMANAGE_CALL_SHAPE } from "./swarm-validate.js";
 
 /**
  * Per-op admissible fields, including the universal `key`/`op`, derived from
@@ -775,7 +775,7 @@ export class TaskManager {
       return { status: "failed", results: [{ key: "batch", op: "list", status: "failed", error: fail("validation_failed", "unknown batch field") }] };
     const unknownField = Object.keys(params).find(key => key !== "operations" && key !== "mode" && key !== "description");
     if (unknownField !== undefined)
-      return { status: "failed", results: [{ key: "batch", op: "list", status: "failed", error: fail("validation_failed", `unknown top-level field ${JSON.stringify(unknownField)}`) }] };
+      return { status: "failed", results: [{ key: "batch", op: "list", status: "failed", error: fail("validation_failed", `unknown top-level field ${JSON.stringify(unknownField)}. ${TASKMANAGE_CALL_SHAPE}`) }] };
     if (params.description !== undefined && typeof params.description !== "string")
       return { status: "failed", results: [{ key: "batch", op: "list", status: "failed", error: fail("validation_failed", "description must be a string") }] };
     const ops = Array.isArray(params.operations)

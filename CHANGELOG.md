@@ -1,5 +1,12 @@
 # Changelog
 
+## 0.3.0
+
+HOJA-799-A-8: Pi waits for a decision answer and continues the same session.
+
+- `extensions/hoja-decision` (new): `hoja_decision_ask` creates a Hoja decision bound to this Pi session (binding from `ctx.sessionManager` and the process, never from the model). The answer is delivered once: as the tool result (`wait_seconds`), at `agent_before_settle` (hold ≤120 s, then a user-role custom message), or, when idle in an interactive session, as a `sendUserMessage` follow-up. `take` is gated locally and by the server's CAS; `delivered` follows the hand-over and `ack` follows the nonce reaching the session's entries. Open decisions are journaled and re-armed on `pi --session` after a crash.
+- `.pi/test/tools/hoja-decision.test.ts`: the three stages, double answers, restart and nonce recovery against an in-memory server with the delivery contract.
+
 ## 0.2.0
 
 Synced with Trebol `79861a3` (HOJA-757): agents register work without being reminded.

@@ -1,5 +1,21 @@
 # Changelog
 
+## 0.5.0
+
+HOJA-841: pi can upload artifacts, and a decision can no longer point a person at a file on the runner box. A pi run
+on HOJA-837 asked a decision whose context said "open app/artifacts/hojatar-options/index.html": pi had no way to
+upload, and its 15 options were cut to 10 by the tool schema.
+
+- `extensions/hoja-artifacts` (new, wired in `src/extension/index.ts`): `hoja_artifact_upload {paths, issue?, titles?, ttlDays?}`,
+  ported from hoja-claude-plugin `src/artifacts.ts`: `POST /api/uploads/direct` → PUT the bytes to storage (Hoja
+  token only when `put.auth`) → complete with `{issueId, title}`. Returns `url`/`absoluteUrl`/`markdown` per file plus
+  per-file `errors`. Same credentials as `hoja_decision_ask` (`HOJA_API_URL`, `HOJA_TOKEN`); relative paths resolve
+  against the session cwd. SVG/HTML/JS are refused locally with "render to PNG".
+- `hoja_decision_ask`: uploads existing local image/video/PDF files named in question/context/options and swaps in
+  the URL; refuses a call that still names a local `.svg`/`.html`, `file://`, `localhost` or absolute
+  `/root`/`/tmp`/`/home` artifact path, with the fix. `options.maxItems` 10 → 20 (the server's `MAX_OPTIONS`).
+- `.pi/test/tools/hoja-artifacts.test.ts`: upload flow, `put.auth`, the tool, rewrite, refusal, 20 options.
+
 ## 0.4.2
 
 - TaskManage shape errors name the call that works (HOJA-822). An unknown top-level field (a

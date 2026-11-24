@@ -1,6 +1,6 @@
 # Changelog
 
-## 0.4.2 — 2026-11-24
+## 0.4.2
 
 - TaskManage shape errors name the call that works (HOJA-822). An unknown top-level field (a
   model guessing `tasks: [...]` or `questions` at the top level) and a missing `operations` now

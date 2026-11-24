@@ -1,5 +1,9 @@
 # Changelog
 
+## 0.4.1
+
+HOJA-817: the skill budget gate no longer blocks every tool when this extension runs on its own. It refills only through `Skill`, which the autogenskills manager registers, and `src/extension/index.ts` does not load that manager, so a Hoja runner's pi (`-e src/extension/index.ts` in its own profile) was blocked after five calls with no way out. The gate now applies only while that manager is loaded (`skillBudgetActive` on `createSwarmBuiltinPipeline`; the runtime passes "the autogenskills budget source exists"). Inside Trebol nothing changes. Test: `.pi/test/runtime/skill-budget-gate.test.ts`.
+
 ## 0.4.0
 
 HOJA-802: Pi reports its run state over OSC 7501 (Program Status Protocol rev 0.4) with only this extension loaded, so a Hoja runner can drive `pi -ne -e src/extension/index.ts`.

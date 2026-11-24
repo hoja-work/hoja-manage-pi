@@ -5,6 +5,7 @@ Hoja-backed task management for [Pi](https://github.com/hoja-work). One Pi exten
 - **TaskManage** — the task engine (create/update/get/list, acceptance questions with evidence revalidation, hooks that gate tool use on a focused task).
 - **Task browser** — read-only TUI overlay opened with `/tasks`.
 - **Hoja filing** — coarse tasks publish automatically to a [Hoja](https://hoja.app) issue; steps stay local. Read-only `hoja_list` / `hoja_get` answer "what should I do next".
+- **Hoja decisions** — `hoja_decision_ask` asks a person a decision on a Hoja task and continues this same Pi session with the answer, exactly once (see below).
 
 ## Provenance
 
@@ -21,7 +22,8 @@ Extracted from `cloverinternational/trebol` at commit `e09781a` with `git filter
 | `extensions/hoja-mode` | `extensions/hoja-mode` (Hoja filing; synced to `4f7490e`) |
 | `.pi/test/tools/hoja-*.test.ts` | `.pi/test/tools/hoja-*.test.ts` (6 suites) |
 | `.pi/lib/**` | runtime, policy, ui, tools and claw helpers the above import |
-| `src/extension/index.ts` | **new** — single entry composing the three extensions |
+| `src/extension/index.ts` | **new** — single entry composing the extensions |
+| `extensions/hoja-decision` | **new here** (HOJA-799-A-8), not in Trebol; Trebol syncs never touch it |
 
 Files keep their upstream paths (rather than being relocated under `src/`) so that `git log` on any file is the real history and upstream diffs apply cleanly.
 
@@ -63,7 +65,7 @@ Then in a session: `TaskManage` is available, `/tasks` opens the browser, `/hoja
 ```bash
 npm install
 npm run build   # tsc, packages/**/src -> dist
-npm test        # vitest, 175 tests
+npm test        # vitest
 ```
 
 `extensions/**` are not type-checked here: Pi loads them at runtime, exactly as Trebol does. `tsc` covers `packages/**/src`, matching upstream's build scope.
@@ -71,6 +73,29 @@ npm test        # vitest, 175 tests
 ### Known pre-existing failure
 
 `packages/tools/mcp/test/index.test.ts > turns a closed server pipe into a transport failure` times out under full-suite parallelism and passes in isolation. Trebol's own full suite fails on the same test (verified on `e09781a`), so this is upstream behavior, not a port regression.
+
+## Hoja decisions (wait for an answer)
+
+`hoja_decision_ask {task, question, options?[{key,label,description,mediaUrl}], context?, wait_seconds?}` creates a
+decision with `taskDecisionCreate` and a `binding` built from the live session, never from the model's arguments:
+`harness: "pi"`, Pi's version, `ctx.sessionManager.getSessionId()`, the session file as `transcriptPath`, cwd, git
+branch/head, host, pid and project trust as `permissionMode` (`approve`/`no-approve`). The answer then comes back by
+the server's hot path (Hoja-Cloud `docs/decisions.md`, "Delivery"), cheapest first:
+
+1. **In the tool call.** With `wait_seconds` (≤600) the call blocks and returns the framed answer as its result.
+2. **At settle.** `agent_before_settle` holds up to 120 s (`HOJA_DECISION_HOLD_S`) while a decision is open and
+   continues the run with the answer as a user-role custom message. An abort, an error, another continuation or a
+   message the person queued ends the hold.
+3. **Idle.** In an interactive (TUI/RPC) session a background long-poll delivers with
+   `pi.sendUserMessage(text, {deliverAs: "followUp"})`.
+
+One long-poll per decision uses one stable waiter id (`pi:<session>:<decision>`) for `wait` and `take`; a local
+phase gate lets exactly one stage call `take`. `delivered` is posted as soon as the text is handed over and `ack`
+once the nonce `⟦hoja-decision <id>#` is in the session's entries (next turn start or tool call). Open decisions are
+journaled in the session, so `pi --session <file>` after a crash re-arms them; if the nonce already reached the
+transcript it acks instead of delivering again. A print (`-p`) run gets stages 1 and 2 only; after it exits the cold
+path (a runner's `pi --session <file> -p`) applies. `HOJA_DECISION_ANSWERERS=agents` lets agent principals answer
+(tests); `HOJA_RUNNER_ID` / `HOJA_RUNNER_STATE_DIR` name this machine's enrolled runner for the cold path.
 
 ## Configuration
 

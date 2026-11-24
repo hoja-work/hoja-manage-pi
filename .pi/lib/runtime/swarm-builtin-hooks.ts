@@ -678,6 +678,10 @@ export function createSwarmBuiltinPipeline(options: Omit<PipelineOptions, "preHo
   extraPre?: PreToolHook[];   // sleep-blocker (85), stdin-conflict (84) — bash-only, supplied by the extension
   extraPost?: PostToolHook[]; // annoyance-nudge (20)
   planMode?: PlanModeHooks;   // interactive TUI only (PlanBroker present)
+  /** Whether the skill budget gate applies. It only makes sense when something can refill it: the
+   *  autogenskills manager (which registers `Skill`). Without it every run would be blocked after
+   *  the fallback budget with no way out (HOJA-817). Defaults to on for the standalone pipeline. */
+  skillBudgetActive?: () => boolean;
 }): SwarmHookPipeline {
   const enforcement = new TaskEnforcementHook(options.enforcementMode ?? "advise");
   const completion = new TaskCompletionEnforcementHook({
@@ -694,7 +698,7 @@ export function createSwarmBuiltinPipeline(options: Omit<PipelineOptions, "preHo
     ...(plan ? [{ name: PLAN_MODE_FIRST_TOOL_HOOK, run: (e: ToolCallEvent) => { const m = plan.firstTool(e.toolName); return m ? { message: m } : CONTINUE; } }] : []), // 96
     { name: enforcement.name, run: (e, t, b, s) => enforcement.onToolBefore(e, t, b, s, isSub()) },   // 95
     { name: completion.name, run: (e, t, b, s) => completion.onToolBefore(e, t, b, s) },                 // 94
-    { name: budgetHook.name, run: (e, t, b, s) => budgetHook.onToolBefore(e, t, b, s) },             // 90
+    { name: budgetHook.name, run: (e, t, b, s) => (options.skillBudgetActive ?? (() => true))() ? budgetHook.onToolBefore(e, t, b, s) : CONTINUE }, // 90
     ...(options.extraPre ?? []),                                                                       // 85, 84
   ];
   const post: PostToolHook[] = [

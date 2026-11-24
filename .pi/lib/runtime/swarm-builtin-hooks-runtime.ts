@@ -1,7 +1,7 @@
 import { isHookEnabled, recordHook, registerHook } from "./hook-state.ts";
 import { AnnoyanceNudgeState, formatHookContext, resultText } from "../policy/swarm-annoyance-nudge.ts";
 import {
-  SwarmHookPipeline, createSwarmBuiltinPipeline,
+  SwarmHookPipeline, createSwarmBuiltinPipeline, AUTOGEN_BUDGET_SOURCE,
   hasFocusedTask,
   type EnforcementMode, type HookTask, type PlanModeHooks, type PostToolHook, type PreToolHook, type ToolCallEvent,
 } from "./swarm-builtin-hooks.ts";
@@ -117,6 +117,9 @@ export function registerSwarmBuiltinHooks(pi: Pi, options: SwarmBuiltinHookOptio
     completion: options.completion,
     extraPre, extraPost,
     planMode: planModeHooks(),
+    // HOJA-817: the skill budget only applies when the autogenskills manager is loaded (it owns
+    // `Skill`, the only thing that refills the budget). hoja-manage-pi alone does not load it.
+    skillBudgetActive: () => Boolean((globalThis as any)[AUTOGEN_BUDGET_SOURCE]),
   });
   registrations.set(owner, pipeline);
   const hooks = (pipeline as any).hooks;

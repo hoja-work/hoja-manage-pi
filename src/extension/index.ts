@@ -12,6 +12,8 @@
  *      options) to Hoja and returns shareable URLs, so nothing in Hoja ever points at a path on this box. HOJA-841.
  *   6. Program status (extensions/program-status): reports Pi's run state (idle/working/blocked/done/error)
  *      over OSC 7501 so a Hoja runner can drive a plain `pi -ne -e <this file>`. Gated by PI_PROGRAM_STATUS. HOJA-802.
+ *   7. Tool input recovery (extensions/tool-input-recovery): restores tool-call arguments that pi's Anthropic
+ *      Messages adapter drops when a provider (Fireworks) sends them in content_block_start. HOJA-889.
  *
  * The Hoja layer never imports TaskManage internals: it consumes the structured
  * `details.batch` envelope TaskManage already emits. Disable it at runtime with
@@ -22,6 +24,7 @@ import hojaMode from "../../extensions/hoja-mode/extension.ts";
 import hojaDecision from "../../extensions/hoja-decision/extension.ts";
 import hojaArtifacts from "../../extensions/hoja-artifacts/extension.ts";
 import programStatus from "../../extensions/program-status/extension.ts";
+import toolInputRecovery from "../../extensions/tool-input-recovery/extension.ts";
 
 export default function hojaManagePi(pi: any): void {
   taskManageExtension(pi);
@@ -29,6 +32,7 @@ export default function hojaManagePi(pi: any): void {
   hojaDecision(pi);
   hojaArtifacts(pi);
   programStatus(pi);
+  toolInputRecovery(pi);
 }
 
 export { registerTaskManageExtension } from "../../extensions/taskmanage/extension.ts";
@@ -37,3 +41,4 @@ export { registerHojaMode, HOJA_RULE } from "../../extensions/hoja-mode/extensio
 export { registerHojaDecision, HOJA_DECISION_ASK_CONTRACT } from "../../extensions/hoja-decision/extension.ts";
 export { registerHojaArtifacts, HOJA_ARTIFACT_UPLOAD_CONTRACT } from "../../extensions/hoja-artifacts/extension.ts";
 export { programStatusEnabled, PROGRAM_STATUS_APP } from "../../extensions/program-status/extension.ts";
+export { registerToolInputRecovery, ToolInputRecovery } from "../../extensions/tool-input-recovery/extension.ts";

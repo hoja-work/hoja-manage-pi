@@ -1,5 +1,25 @@
 # Changelog
 
+## 0.5.1
+
+HOJA-889: a Builder run on Fireworks DeepSeek (`accounts/fireworks/models/deepseek-v4p1-flash-1017`, HOJA-870) got
+`TaskManage: operations is required` nine times in a row, and the task gate then blocked every acting tool, so the
+run could only stop and report. pi serves that model over Anthropic Messages. pi-ai's adapter (1.1.0, still in 1.6.1)
+seeds a tool call's arguments from `content_block_start.input` but replaces them at `content_block_stop` with
+`parseToolCallArguments(<input_json_delta text>)`. When the provider sends the input only in the start event, that
+text is empty, so the call reaches the tool as `{}` and pi records no error.
+
+- `extensions/tool-input-recovery` (new, wired in `src/extension/index.ts`): watches `provider_stream_event` for
+  Anthropic Messages streams and, on `message_end`, restores a tool call's start-event input. It acts only when the
+  finished arguments are exactly `{}`, pi recorded no `argumentsError`, no `input_json_delta` arrived, and the start
+  input is a non-empty object. Each restore writes a `hoja-tool-input-recovered` session entry.
+- Task gate: two TaskManage failures in a row with empty arguments suspend `[TASK ENFORCEMENT - BLOCKED]`. The gate
+  sends a `[TASK ENFORCEMENT - SUSPENDED]` nudge instead of a block, and it re-arms as soon as a TaskManage call
+  arrives with arguments.
+- TaskManage on `{}` now says the arguments were lost before the tool, not that the call had the wrong shape.
+- `packages/tools/taskmanage/test/lost-arguments.test.ts`: recovery, the cases it must leave alone, and the gate's
+  suspend and re-arm.
+
 ## 0.5.0
 
 HOJA-841: pi can upload artifacts, and a decision can no longer point a person at a file on the runner box. A pi run

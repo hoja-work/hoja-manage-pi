@@ -14,6 +14,8 @@ const MINIMAL_CREATE = `{"key":"<your-key>","op":"create","subject":"<short impe
  * invented `tasks: [...]` and `questions` at the top level and never found `operations`
  * from a bare "unknown field" error, so every shape error names the one shape that works. */
 export const TASKMANAGE_CALL_SHAPE = `TaskManage takes {"operations":[...]}: a list of operations, each with its own "key" and "op". Example: {"operations":[{"key":"t1","op":"create","subject":"<short imperative title>","status":"in_progress","active":true}]}`;
+/** HOJA-889: the explanation for a call that arrived with no arguments at all. */
+export const TASKMANAGE_EMPTY_ARGUMENTS = `this call reached TaskManage with no arguments at all ({}). Your arguments were dropped between the model provider and the tool, so this is not a mistake in your call shape. Retry once with a short call holding a single operation; if it arrives empty again, the task gate is suspended so you can keep working, and you should tell the user the task tool was unavailable. ${TASKMANAGE_CALL_SHAPE}`;
 const CATEGORIES = new Set(["researching", "planning", "acting", "verifying", "debugging", "documenting"]);
 const PRIORITIES = new Set(["low", "medium", "high"]);
 const NOTE_TYPES = new Set(["decision", "blocker", "learning", "milestone", "question", "observation", "other"]);
@@ -213,6 +215,10 @@ export function swarmValidateTaskManageParams(params: unknown): string | undefin
     for (const field of Object.keys(raw)) if (field !== "operations" && field !== "mode" && field !== "description") fail(`unknown top-level field ${q(field)}. ${TASKMANAGE_CALL_SHAPE}`);
     if (raw.description !== undefined && typeof raw.description !== "string") fail("description must be a string");
     const ops = raw.operations;
+    // HOJA-889: `{}` means the arguments never reached the tool (a provider/harness
+    // fault), not a wrong shape; saying so stops the model retrying the same call
+    // while believing its JSON is at fault.
+    if (ops === undefined && Object.keys(raw).length === 0) fail(`operations is required: ${TASKMANAGE_EMPTY_ARGUMENTS}`);
     if (ops === undefined) fail(`operations is required. ${TASKMANAGE_CALL_SHAPE}`);
     if (!Array.isArray(ops)) fail("operations must be an array");
     if ((ops as unknown[]).length === 0) fail("operations must contain at least one operation");

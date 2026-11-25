@@ -11,6 +11,7 @@ import { STDIN_CONFLICT_HOOK_NAME, StdinConflictHook } from "./swarm-stdin-confl
 import { rawPi } from "./swarm-tool-surface.ts";
 import { installToolOutputSpill } from "./swarm-toolout-boundary.ts";
 import { TaskGateResumeBudget, evaluateTaskGateResume } from "./task-gate-resume.ts";
+import { isTaskManageTool } from "./swarm-toolclass.ts";
 import { WORK_REGISTRATION_CUSTOM_TYPE, WORK_REGISTRATION_HOOK, WorkRegistrationPolicy } from "./work-registration.ts";
 
 type Pi = any;
@@ -218,6 +219,7 @@ export function registerSwarmBuiltinHooks(pi: Pi, options: SwarmBuiltinHookOptio
     const { text, index } = firstText(event?.content);
     const content: any[] | undefined = Array.isArray(event?.content) ? event.content : undefined;
     pipeline.postTool({ toolName: event?.toolName ?? "", params: event?.input ?? {}, toolCallId: event?.toolCallId, failed, output: resultText(content ?? event?.content), ...( { details: event?.details } as any) });
+    if (isTaskManageTool(event?.toolName ?? "")) hooks.enforcement.onTaskManageResult(event?.input, failed);
     registration.onToolResult({ toolName: event?.toolName ?? "", params: event?.input ?? {}, failed, taskManageSucceeded: !failed && !/"status"\s*:\s*"failed"/.test(text) });
     const phc = event?.toolCallId ? preContext.get(event.toolCallId) ?? "" : "";
     if (event?.toolCallId) preContext.delete(event.toolCallId);

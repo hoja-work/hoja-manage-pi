@@ -48,7 +48,14 @@ describe('TaskManage call label', () => {
     const tasks = swarmValidateTaskManageParams({ tasks: [{ id: 'x', title: 'y' }] }) ?? '';
     expect(tasks).toContain('unknown top-level field "tasks"');
     expect(tasks).toContain('{"operations":[{"key":"t1","op":"create"');
-    expect(swarmValidateTaskManageParams({})).toContain('operations is required. TaskManage takes {"operations":');
+    expect(swarmValidateTaskManageParams({ mode: 'atomic' })).toContain('operations is required. TaskManage takes {"operations":');
+  });
+
+  it('says an empty call lost its arguments instead of blaming the shape (HOJA-889)', () => {
+    const empty = swarmValidateTaskManageParams({}) ?? '';
+    expect(empty).toMatch(/^operations is required: this call reached TaskManage with no arguments at all/);
+    expect(empty).toContain('not a mistake in your call shape');
+    expect(empty).toContain('{"operations":[{"key":"t1","op":"create"');
   });
 
   it('rejects a non-string label at both layers', () => {

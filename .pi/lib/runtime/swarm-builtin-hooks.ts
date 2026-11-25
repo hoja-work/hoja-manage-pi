@@ -117,6 +117,9 @@ const HAS_PLAN_PHRASES = [
   "execute the plan", "implement the plan", "do what you planned", "do what you said", "do what we discussed",
   "continue doing", "keep going", "carry on", "proceed", "resume",
 ];
+/** HOJA-889: empty-argument TaskManage failures in a row before the task gate stops blocking. */
+export const TASK_ARGUMENTS_LOST_FAIL_OPEN = 2;
+export const TASK_ARGUMENTS_LOST_MESSAGE = `[TASK ENFORCEMENT - SUSPENDED] TaskManage has received empty arguments ${TASK_ARGUMENTS_LOST_FAIL_OPEN}+ times in a row: the harness or model provider is dropping its tool-call arguments. Tools are unlocked so the work is not deadlocked. Keep trying TaskManage occasionally (a short call with one operation); the gate resumes once a TaskManage call arrives with arguments. Tell the user the task tool was unavailable.`;
 export const userIndicatesExistingPlan = (message: string) => { const lower = message.toLowerCase(); return HAS_PLAN_PHRASES.some(p => lower.includes(p)); };
 
 export class TaskEnforcementHook {
@@ -125,7 +128,22 @@ export class TaskEnforcementHook {
   private planModeUsed = false;
   private userHasPlan = false;
   private lastUserMessage = "";
+  /** HOJA-889: consecutive TaskManage calls that reached the tool with no arguments at all. */
+  private lostTaskArguments = 0;
   constructor(private readonly mode: EnforcementMode = "advise") {}
+  /**
+   * HOJA-889: record a TaskManage result. A call whose arguments arrived as `{}` is
+   * a harness/provider fault (the model's arguments were dropped on the way in),
+   * not a model mistake, so it counts towards {@link TASK_ARGUMENTS_LOST_FAIL_OPEN};
+   * any TaskManage call that did carry arguments resets the count.
+   */
+  onTaskManageResult(params: unknown, failed: boolean): void {
+    const empty = !params || typeof params !== "object" || Object.keys(params as object).length === 0;
+    if (failed && empty) this.lostTaskArguments++;
+    else this.lostTaskArguments = 0;
+  }
+  /** True while the task tool itself is unusable, so the gate must not deadlock the session. */
+  get taskToolUnavailable(): boolean { return this.lostTaskArguments >= TASK_ARGUMENTS_LOST_FAIL_OPEN; }
   /** EventMessageAfterReceive with role user. */
   onUserMessage(content: string): void {
     if (content === "") return;
@@ -150,6 +168,10 @@ export class TaskEnforcementHook {
     }
     if (hasFocusedTask(tasks)) { this.counter = 0; return CONTINUE; }
     this.counter++;
+    // HOJA-889: when TaskManage keeps receiving empty arguments the model cannot
+    // create the task this gate demands, so blocking would deadlock the run. Let
+    // the tool through and say why, instead of blocking every tool forever.
+    if (this.taskToolUnavailable) return { message: wrapReminder(this.name, "nudge", nextReminderSeq(this.name), TASK_ARGUMENTS_LOST_MESSAGE) };
     if (this.mode === "block") return { block: true, message: wrapReminder(this.name, "block", nextReminderSeq(this.name), this.enforcementMessageContextual()) };
     const [seq, ok] = budget.tryClaim(session, META_NUDGE_BLOCK);
     if (!ok) return CONTINUE;
